@@ -1,0 +1,53 @@
+# gwtor: one Tor instance per WireGuard tunnel, behind gwproxy.
+#
+# The Tor services depend on the WireGuard configs in ./wg, so they are
+# not listed here: ./gen-compose.sh writes them to compose.override.yaml,
+# which "docker compose" merges in on its own, together with gwproxy's
+# upstream pool and credentials under ./run/gwproxy. Run it again after
+# adding or removing a config:
+#
+#   ./gen-compose.sh && docker compose up -d --build --remove-orphans
+
+name: gwtor
+
+networks:
+  gwtor:
+    name: gwtor
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: gwtor
+    ipam:
+      config:
+        - subnet: 10.185.100.0/24
+          gateway: 10.185.100.1
+
+services:
+  # Builds the Tor image that every generated tor-* service runs; it
+  # never runs a container itself.
+  tor-image:
+    image: gwtor/tor:0.4.9.16
+    build:
+      context: docker/tor
+      additional_contexts:
+        tor-src: ./tor
+    scale: 0
+
+  gwproxy:
+    image: gwtor/gwproxy:dev
+    build:
+      context: docker/gwproxy
+      additional_contexts:
+        gwproxy-src: ./gwproxy
+    restart: unless-stopped
+    init: true
+    networks:
+      gwtor:
+        ipv4_address: 10.185.100.2
+    volumes:
+      - ./run/gwproxy:/etc/gwproxy:ro
+    command:
+      - --bind=[::]:9999
+      - --as-socks5=1
+      - --as-http=1
+      - --auth-file=/etc/gwproxy/auth.txt
+      - --acl-file=/etc/gwproxy/acl.txt
