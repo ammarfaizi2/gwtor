@@ -1,0 +1,7 @@
+[submodule "gwproxy"]
+	path = gwproxy
+	url = http://github.com/ammarfaizi2/gwproxy.git
+	branch = master
+[submodule "tor"]
+	path = tor
+	url = https://gitlab.torproject.org/tpo/core/tor
