@@ -13,7 +13,7 @@
 # Environment:
 #   GWTOR_SUBNET_PREFIX  first three octets of the gwtor network [10.185.100]
 #   GWTOR_FIRST_HOST     last octet of the first Tor container          [3]
-#   GWTOR_SOCKS_PORTS    SOCKS port range of every Tor instance [8001-8015]
+#   GWTOR_SOCKS_PORTS    SOCKS port range of every Tor instance [8000-8009]
 #   GWPROXY_USER         initial gwproxy username                 [gwproxy]
 #   GWPROXY_PASS         initial gwproxy password      [e70ed37f7ec082d0aa]
 
@@ -23,7 +23,7 @@ cd "$(dirname "$0")"
 
 PREFIX=${GWTOR_SUBNET_PREFIX:-10.185.100}
 FIRST_HOST=${GWTOR_FIRST_HOST:-3}
-PORTS=${GWTOR_SOCKS_PORTS:-8001-8015}
+PORTS=${GWTOR_SOCKS_PORTS:-8000-8009}
 GWPROXY_USER=${GWPROXY_USER:-gwproxy}
 GWPROXY_PASS=${GWPROXY_PASS:-e70ed37f7ec082d0aa}
 TOR_IMAGE=gwtor/tor:0.4.9.16

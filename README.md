@@ -10,9 +10,9 @@ in front of them as one load-balancing SOCKS5 and HTTP proxy.
   client  ---------> | gwproxy  10.185.100.2:9999          |
   (SOCKS5 or HTTP)   |   round-robin over every Tor port   |
                      |                                    |
-                     |   tor-a  10.185.100.3:8001-8015 ---+--> wg0 --> VPN A --> Tor
-                     |   tor-b  10.185.100.4:8001-8015 ---+--> wg0 --> VPN B --> Tor
-                     |   tor-c  10.185.100.5:8001-8015 ---+--> wg0 --> VPN C --> Tor
+                     |   tor-a  10.185.100.3:8000-8009 ---+--> wg0 --> VPN A --> Tor
+                     |   tor-b  10.185.100.4:8000-8009 ---+--> wg0 --> VPN B --> Tor
+                     |   tor-c  10.185.100.5:8000-8009 ---+--> wg0 --> VPN C --> Tor
                      +------------------------------------+
 ```
 
@@ -22,7 +22,7 @@ in front of them as one load-balancing SOCKS5 and HTTP proxy.
   endpoint, and a default route through `wg0`. If the tunnel goes away,
   traffic stops instead of leaking out of the host's own connection. DNS
   also goes through the tunnel.
-- **15 SOCKS5 ports per Tor instance** (8001-8015). Streams on different
+- **10 SOCKS5 ports per Tor instance** (8000-8009). Streams on different
   ports never share a Tor circuit, so each port usually exits from a
   different Tor exit.
 - **gwproxy** listens on `[::]:9999` and speaks SOCKS5 and HTTP (CONNECT
@@ -110,7 +110,7 @@ can also use one instance, or one port, directly, without
 authentication:
 
 ```bash
-curl --socks5-hostname 10.185.100.3:8001 https://ip.me
+curl --socks5-hostname 10.185.100.3:8000 https://ip.me
 ```
 
 ### Managing users
@@ -174,7 +174,7 @@ removes those volumes too.
 |-----------------------|----------------------|------------------------------------------|
 | `GWTOR_SUBNET_PREFIX` | `10.185.100`         | First three octets of the gwtor network  |
 | `GWTOR_FIRST_HOST`    | `3`                  | Last octet of the first Tor container    |
-| `GWTOR_SOCKS_PORTS`   | `8001-8015`          | SOCKS port range of every Tor instance   |
+| `GWTOR_SOCKS_PORTS`   | `8000-8009`          | SOCKS port range of every Tor instance   |
 | `GWPROXY_USER`        | `gwproxy`            | Initial gwproxy user                     |
 | `GWPROXY_PASS`        | `e70ed37f7ec082d0aa` | Initial gwproxy password                 |
 
@@ -187,7 +187,7 @@ of a `tor-*` service:
 | Variable           | Default              | Meaning                                         |
 |--------------------|----------------------|-------------------------------------------------|
 | `WG_DNS`           | `1.1.1.1`            | Resolvers, used when the config has no `DNS` line |
-| `TOR_SOCKS_PORTS`  | `8001-8015`          | SOCKS port range                                |
+| `TOR_SOCKS_PORTS`  | `8000-8009`          | SOCKS port range                                |
 | `TOR_SOCKS_ACCEPT` | `10.185.100.0/24`    | Networks allowed to use the SOCKS ports         |
 | `TOR_EXTRA_CONF`   | (empty)              | Extra lines appended to the generated torrc     |
 
@@ -208,8 +208,8 @@ of a `tor-*` service:
 
 ## Limits
 
-- gwproxy caps an upstream pool at 64 servers, so with 15 ports per
-  instance, gwtor runs at most four WireGuard configs. `gen-compose.sh`
+- gwproxy caps an upstream pool at 64 servers, so with 10 ports per
+  instance, gwtor runs at most six WireGuard configs. `gen-compose.sh`
   refuses more.
 - WireGuard endpoints must be IPv4, since the gwtor network is IPv4 only.
   Traffic inside the tunnel may still use IPv6.

@@ -12,7 +12,7 @@
 #   WG_CONF          WireGuard config (wg-quick format)  [/etc/gwtor/wg.conf]
 #   WG_DNS           resolvers to use when the config has no DNS line,
 #                    reached through the tunnel                 [1.1.1.1]
-#   TOR_SOCKS_PORTS  first-last SOCKS port range              [8001-8015]
+#   TOR_SOCKS_PORTS  first-last SOCKS port range              [8000-8009]
 #   TOR_SOCKS_ACCEPT CIDRs allowed to use the SOCKS ports  [10.185.100.0/24]
 #   TOR_EXTRA_CONF   extra lines appended to the generated torrc       []
 
@@ -20,7 +20,7 @@ set -eu
 
 WG_CONF=${WG_CONF:-/etc/gwtor/wg.conf}
 WG_DNS=${WG_DNS:-1.1.1.1}
-TOR_SOCKS_PORTS=${TOR_SOCKS_PORTS:-8001-8015}
+TOR_SOCKS_PORTS=${TOR_SOCKS_PORTS:-8000-8009}
 TOR_SOCKS_ACCEPT=${TOR_SOCKS_ACCEPT:-10.185.100.0/24}
 TOR_EXTRA_CONF=${TOR_EXTRA_CONF:-}
 IFACE=wg0
