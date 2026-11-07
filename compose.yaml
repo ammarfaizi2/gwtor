@@ -51,3 +51,6 @@ services:
       - --as-http=1
       - --auth-file=/etc/gwproxy/auth.txt
       - --acl-file=/etc/gwproxy/acl.txt
+      # Covers waiting for Tor to open the stream, which takes over 10 s
+      # when Tor gives up on a slow circuit and retries on another.
+      - --connect-timeout=60
