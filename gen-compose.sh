@@ -13,7 +13,8 @@
 # Environment:
 #   GWTOR_SUBNET_PREFIX  first three octets of the gwtor network [10.185.100]
 #   GWTOR_FIRST_HOST     last octet of the first Tor container          [3]
-#   GWTOR_SOCKS_PORTS    SOCKS port range of every Tor instance [8000-8009]
+#   GWTOR_SOCKS_PORT_LOW   first SOCKS port of every Tor instance  [8000]
+#   GWTOR_SOCKS_PORT_HIGH  last SOCKS port of every Tor instance   [8031]
 #   GWPROXY_USER         initial gwproxy username                 [gwproxy]
 #   GWPROXY_PASS         initial gwproxy password      [e70ed37f7ec082d0aa]
 
@@ -23,7 +24,8 @@ cd "$(dirname "$0")"
 
 PREFIX=${GWTOR_SUBNET_PREFIX:-10.185.100}
 FIRST_HOST=${GWTOR_FIRST_HOST:-3}
-PORTS=${GWTOR_SOCKS_PORTS:-8000-8009}
+first_port=${GWTOR_SOCKS_PORT_LOW:-8000}
+last_port=${GWTOR_SOCKS_PORT_HIGH:-8031}
 GWPROXY_USER=${GWPROXY_USER:-gwproxy}
 GWPROXY_PASS=${GWPROXY_PASS:-e70ed37f7ec082d0aa}
 TOR_IMAGE=gwtor/tor:0.4.9.16
@@ -32,10 +34,20 @@ MAX_POOL=8192
 
 die() { printf 'gen-compose: error: %s\n' "$*" >&2; exit 1; }
 
-first_port=${PORTS%-*}
-last_port=${PORTS#*-}
+# A port number: digits only, no leading zero, 1-65535.
+is_port() {
+	case "$1" in
+	''|*[!0-9]*|0*) return 1 ;;
+	esac
+	[ "${#1}" -le 5 ] && [ "$1" -le 65535 ]
+}
+is_port "$first_port" ||
+	die "GWTOR_SOCKS_PORT_LOW=$first_port is not a port number"
+is_port "$last_port" ||
+	die "GWTOR_SOCKS_PORT_HIGH=$last_port is not a port number"
+[ "$first_port" -le "$last_port" ] ||
+	die "GWTOR_SOCKS_PORT_LOW is above GWTOR_SOCKS_PORT_HIGH"
 nr_ports=$((last_port - first_port + 1))
-[ "$nr_ports" -ge 1 ] || die "bad port range $PORTS"
 
 # Config names become service and volume names.
 names=
@@ -79,7 +91,8 @@ trap 'rm -f "$tmp"' EXIT
       net.ipv6.conf.all.disable_ipv6: 0
       net.ipv6.conf.default.disable_ipv6: 0
     environment:
-      TOR_SOCKS_PORTS: "$PORTS"
+      TOR_SOCKS_PORT_LOW: "$first_port"
+      TOR_SOCKS_PORT_HIGH: "$last_port"
       TOR_SOCKS_ACCEPT: "$PREFIX.0/24"
     networks:
       gwtor:
@@ -137,7 +150,7 @@ trap - EXIT
 
 h=$FIRST_HOST
 for n in $names; do
-	echo "tor-$n: $PREFIX.$h, SOCKS5 ports $PORTS"
+	echo "tor-$n: $PREFIX.$h, SOCKS5 ports $first_port-$last_port"
 	h=$((h + 1))
 done
 echo "gwproxy pool: $((nr * nr_ports)) servers"
