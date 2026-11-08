@@ -27,8 +27,8 @@ PORTS=${GWTOR_SOCKS_PORTS:-8000-8009}
 GWPROXY_USER=${GWPROXY_USER:-gwproxy}
 GWPROXY_PASS=${GWPROXY_PASS:-e70ed37f7ec082d0aa}
 TOR_IMAGE=gwtor/tor:0.4.9.16
-# gwproxy refuses a pool of more than 64 servers.
-MAX_POOL=64
+# gwproxy refuses a pool of more than 8192 servers.
+MAX_POOL=8192
 
 die() { printf 'gen-compose: error: %s\n' "$*" >&2; exit 1; }
 

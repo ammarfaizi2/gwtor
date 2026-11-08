@@ -208,9 +208,10 @@ of a `tor-*` service:
 
 ## Limits
 
-- gwproxy caps an upstream pool at 64 servers, so with 10 ports per
-  instance, gwtor runs at most six WireGuard configs. `gen-compose.sh`
-  refuses more.
+- The gwtor network has room for 252 Tor instances (10.185.100.3 to
+  .254), so gwtor runs at most 252 WireGuard configs. gwproxy's limit of
+  8192 servers per upstream pool allows more: 819 instances with 10
+  ports each. `gen-compose.sh` refuses whatever exceeds either limit.
 - WireGuard endpoints must be IPv4, since the gwtor network is IPv4 only.
   Traffic inside the tunnel may still use IPv6.
 - Tor is built as a client only; it cannot run as a relay.
