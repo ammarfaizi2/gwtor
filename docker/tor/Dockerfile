@@ -83,7 +83,7 @@ COPY --from=build /src/tor/src/config/geoip /src/tor/src/config/geoip6 \
 	/usr/local/share/tor/
 COPY entrypoint.sh /usr/local/sbin/gwtor-entrypoint
 VOLUME /var/lib/tor
-EXPOSE 8000-8009
+EXPOSE 8000-8031
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=40 \
 	CMD grep -q 'Bootstrapped 100%' /var/lib/tor/notices.log
 ENTRYPOINT ["/usr/local/sbin/gwtor-entrypoint"]

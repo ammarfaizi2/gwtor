@@ -12,7 +12,8 @@
 #   WG_CONF          WireGuard config (wg-quick format)  [/etc/gwtor/wg.conf]
 #   WG_DNS           resolvers to use when the config has no DNS line,
 #                    reached through the tunnel                 [1.1.1.1]
-#   TOR_SOCKS_PORTS  first-last SOCKS port range              [8000-8009]
+#   TOR_SOCKS_PORT_LOW   first SOCKS port of the range             [8000]
+#   TOR_SOCKS_PORT_HIGH  last SOCKS port of the range              [8031]
 #   TOR_SOCKS_ACCEPT CIDRs allowed to use the SOCKS ports  [10.185.100.0/24]
 #   TOR_EXTRA_CONF   extra lines appended to the generated torrc       []
 
@@ -20,7 +21,8 @@ set -eu
 
 WG_CONF=${WG_CONF:-/etc/gwtor/wg.conf}
 WG_DNS=${WG_DNS:-1.1.1.1}
-TOR_SOCKS_PORTS=${TOR_SOCKS_PORTS:-8000-8009}
+TOR_SOCKS_PORT_LOW=${TOR_SOCKS_PORT_LOW:-8000}
+TOR_SOCKS_PORT_HIGH=${TOR_SOCKS_PORT_HIGH:-8031}
 TOR_SOCKS_ACCEPT=${TOR_SOCKS_ACCEPT:-10.185.100.0/24}
 TOR_EXTRA_CONF=${TOR_EXTRA_CONF:-}
 IFACE=wg0
@@ -29,6 +31,20 @@ TOR_DATA=/var/lib/tor
 
 log() { printf 'gwtor: %s\n' "$*" >&2; }
 die() { log "error: $*"; exit 1; }
+
+# A port number: digits only, no leading zero, 1-65535.
+is_port() {
+	case "$1" in
+	''|*[!0-9]*|0*) return 1 ;;
+	esac
+	[ "${#1}" -le 5 ] && [ "$1" -le 65535 ]
+}
+is_port "$TOR_SOCKS_PORT_LOW" ||
+	die "TOR_SOCKS_PORT_LOW=$TOR_SOCKS_PORT_LOW is not a port number"
+is_port "$TOR_SOCKS_PORT_HIGH" ||
+	die "TOR_SOCKS_PORT_HIGH=$TOR_SOCKS_PORT_HIGH is not a port number"
+[ "$TOR_SOCKS_PORT_LOW" -le "$TOR_SOCKS_PORT_HIGH" ] ||
+	die "TOR_SOCKS_PORT_LOW is above TOR_SOCKS_PORT_HIGH"
 
 [ -r "$WG_CONF" ] || die "cannot read $WG_CONF"
 
@@ -131,8 +147,6 @@ for d in $DNS; do
 done
 cat "$RUN_DIR/resolv.conf" > /etc/resolv.conf
 
-first=${TOR_SOCKS_PORTS%-*}
-last=${TOR_SOCKS_PORTS#*-}
 TORRC=$RUN_DIR/torrc
 {
 	echo "DataDirectory $TOR_DATA"
@@ -141,8 +155,8 @@ TORRC=$RUN_DIR/torrc
 	echo "Log notice stdout"
 	echo "Log notice file $TOR_DATA/notices.log"
 	# Streams on different SOCKS ports never share a circuit.
-	p=$first
-	while [ "$p" -le "$last" ]; do
+	p=$TOR_SOCKS_PORT_LOW
+	while [ "$p" -le "$TOR_SOCKS_PORT_HIGH" ]; do
 		echo "SocksPort 0.0.0.0:$p"
 		p=$((p + 1))
 	done
