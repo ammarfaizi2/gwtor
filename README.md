@@ -8,7 +8,7 @@ in front of them as one load-balancing SOCKS5 and HTTP proxy.
                          gwtor network 10.185.100.0/24
                      +------------------------------------+
   client  ---------> | gwproxy  10.185.100.2:9999          |
-  (SOCKS5 or HTTP)   |   round-robin over every Tor port   |
+  (SOCKS5 or HTTP)   |   balances over every Tor port      |
                      |                                    |
                      |   tor-a  10.185.100.3:8000-8031 ---+--> wg0 --> VPN A --> Tor
                      |   tor-b  10.185.100.4:8000-8031 ---+--> wg0 --> VPN B --> Tor
@@ -28,8 +28,9 @@ in front of them as one load-balancing SOCKS5 and HTTP proxy.
 - **gwproxy** listens on `[::]:9999` and speaks SOCKS5 and HTTP (CONNECT
   and plain forwarding) on that one port, telling them apart by the first
   bytes of each connection. It requires a username and password, and it
-  sends each connection to the next Tor SOCKS port in turn, alternating
-  between instances so consecutive connections use different tunnels.
+  balances the connections over every Tor SOCKS port with "random two":
+  each goes to the less busy of two ports drawn at random, which keeps
+  the load nearly even at little cost.
 - **Built from source** with clang 23 and ThinLTO: Tor 0.4.9.16 and
   gwproxy, both tracked as git submodules.
 
