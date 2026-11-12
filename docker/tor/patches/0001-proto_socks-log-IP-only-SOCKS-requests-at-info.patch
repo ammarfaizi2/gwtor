@@ -1,0 +1,28 @@
+proto_socks: Log IP-only SOCKS requests at info, not warn
+
+Tor warns, at most once every 5 seconds per process, whenever a SOCKS
+client gives it an IP address instead of a host name, since the client
+may have leaked the name through its own DNS lookup.  The option that
+silenced this, WarnUnsafeSocks, is obsolete and ignored.  Behind
+gwtor's gwproxy such clients are expected and known, and the warning
+only floods the logs.  Log it at info level instead; the controller
+event and SafeSocks behave as before.
+
+diff --git a/src/core/proto/proto_socks.c b/src/core/proto/proto_socks.c
+index 08c1793456f3..0c76773a300f 100644
+--- a/src/core/proto/proto_socks.c
++++ b/src/core/proto/proto_socks.c
+@@ -65,7 +65,12 @@ log_unsafe_socks_warning(int socks_protocol, const char *address,
+   /* note the subtle "||" here: either warn every time, or else
+    * warn in a rate-limited way otherwise. */
+   if (warn_every_time || (m = rate_limit_log(&socks_ratelim, approx_time()))) {
+-    log_warn(LD_APP,
++    /* gwtor: info, not warn.  Clients behind gwtor's gwproxy may resolve
++     * names themselves, knowingly; at warn level this message floods the
++     * logs (once every 5 seconds per Tor process) with nothing to act on.
++     * The controller event below is still sent, and SafeSocks still
++     * rejects such requests when it is set. */
++    log_info(LD_APP,
+              "Your application (using socks%d to port %d) is giving "
+              "Tor only an IP address. Applications that do DNS resolves "
+              "themselves may leak information. Consider using Socks4A "

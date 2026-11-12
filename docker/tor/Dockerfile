@@ -38,15 +38,21 @@ FROM toolchain AS build
 RUN set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
-		autoconf automake pkg-config python3 \
+		autoconf automake patch pkg-config python3 \
 		libevent-dev libssl-dev zlib1g-dev libzstd-dev liblzma-dev \
 		libcap-dev libseccomp-dev; \
 	rm -rf /var/lib/apt/lists/*
 COPY --from=tor-src . /src/tor
+# gwtor's changes to Tor, applied in name order.  One that no longer
+# applies cleanly to the submodule's Tor fails the build.
+COPY patches/ /src/patches/
 WORKDIR /src/tor
 # The submodule's .git is a gitfile pointing outside the build context.
 RUN set -eux; \
 	rm -f .git; \
+	for p in /src/patches/*.patch; do \
+		patch -p1 --forward --batch < "$p"; \
+	done; \
 	./autogen.sh; \
 	./configure \
 		CFLAGS="-O2 -flto=thin" \
